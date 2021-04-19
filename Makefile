@@ -2,7 +2,7 @@
 # Build tools
 #--------------------------------------------------------------------
 
-RISCV_PREFIX=riscv64-unknown-elf-
+RISCV_PREFIX=riscv64-linux-gnu-
 CC = $(RISCV_PREFIX)gcc
 LD = $(RISCV_PREFIX)ld
 RISCV_COPY = $(RISCV_PREFIX)objcopy
@@ -21,7 +21,7 @@ BBL_BIN = $(BBL_BUILD_PATH)/bbl.bin
 
 BBL_PAYLOAD = $(LINUX_ELF)
 #BBL_PAYLOAD = dummy_payload
-BBL_CONFIG = --host=riscv64-unknown-elf --with-payload=$(BBL_PAYLOAD) \
+BBL_CONFIG = --host=riscv64-linux-gnu --with-payload=$(BBL_PAYLOAD) \
 						 --with-arch=rv64imac --enable-logo #--enable-print-device-tree
 
 DTB = $(BBL_BUILD_PATH)/system.dtb
@@ -35,7 +35,7 @@ endif
 # Linux variables
 #--------------------------------------------------------------------
 
-LINUX_REPO_PATH = $(abspath ../riscv-linux)
+LINUX_REPO_PATH = $(abspath ../linux)
 LINUX_ELF = $(LINUX_REPO_PATH)/vmlinux
 
 ROOTFS_PATH = $(abspath ../riscv-rootfs)
@@ -76,18 +76,18 @@ bbl-clean:
 $(LINUX_REPO_PATH):
 	mkdir -p $@
 	@/bin/echo -e "\033[1;31mBy default, a shallow clone with only 1 commit history is performed, since the commit history is very large.\nThis is enough for building the project.\nTo fetch full history, run 'git fetch --unshallow' under $(LINUX_REPO_PATH).\033[0m"
-	git clone --depth 1 -b noop https://github.com/LvNA-system/riscv-linux.git $@
+	git clone --depth 1 --branch rv-virt https://github.com/PanQL/linux.git $@
 	$(RFS_ENV) $(MAKE) -C $@ ARCH=riscv emu_defconfig
 
 $(ROOTFS_PATH):
 	mkdir -p $@
-	git clone https://github.com/LvNA-system/riscv-rootfs.git $@
+	git clone https://github.com/OSCPU/riscv-rootfs.git $@
 
 linux: $(LINUX_ELF)
 
 $(LINUX_ELF): | $(LINUX_REPO_PATH) $(ROOTFS_PATH)
 	$(RFS_ENV) $(MAKE) -C $(ROOTFS_PATH)
-	$(RFS_ENV) $(MAKE) -C $(@D) CROSS_COMPILE=riscv64-unknown-linux-gnu- ARCH=riscv vmlinux
+	$(RFS_ENV) $(MAKE) -C $(@D) CROSS_COMPILE=riscv64-linux-gnu- ARCH=riscv vmlinux
 	$(RISCV_DUMP) -d $(LINUX_ELF) > $(BBL_BUILD_PATH)/vmlinux.txt
 
 linux-clean:
